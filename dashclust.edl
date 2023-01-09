@@ -1,0 +1,277 @@
+PROJECT (
+	PREAMBLE (
+		NAME "Dashcluster"
+		AUTHOR "Lawrence Williams, modified by Roland Ibbett"
+		VERSION 2.8
+		DESCRIPTION "4-processor DASH Cluster"
+	)
+
+	PARAMLIB (
+
+--  Data packet  definitions
+
+		STRUCT (p1_struct, [RINT (p1_address, 0), 
+                                     RSTRING (p1_rw, "-"),
+                                     RSTRING (p1_id, "-")]);
+                LINK   (p1_link, [(DATAPKT, RSTRUCT(p1_struct, DP))]);
+
+		STRUCT (p2_struct, [ RINT (p2_address, 0 ), 
+				RSTRING (p2_rw, "-" ), 
+				RSTRING (p2_id, "---" ), 
+				RINT (p2_dev_id, 0 )]);
+
+		LINK (p2_link, [(BUSPKT, RSTRUCT (p2_struct, BP))]);
+
+
+-- Struct for holding memory traces
+
+		STRUCT (mem_trace_struct, [RINT (mt_address,0),
+                                            RSTRING (mt_rw, "__"),
+                                            RSTRING (mt_id, "__")]);
+
+-- Struct for holding cache line information
+
+		STRUCT (ca_line_struct, [RINT (ca_valid,0),
+					  RINT (ca_mod,0),
+					  RINT (ca_share,0),
+					  RINT (ca_tag,0),
+					  RINT (ca_cm_block,0),
+					  RINT (ca_add1,0),
+					  RINT (ca_add2,0),
+					  RINT (ca_add3,0),
+					  RINT (ca_add4,0)]);
+
+-- definition of error&parameters description word array
+	ARRAY (string_array, String);
+
+-- definition of parameter value array
+	ARRAY (parameter_value_array, int);
+
+-- Definitions of State enumerations for mips and caches.
+
+-- Define storage arrays for cache contents and memory trace storage
+
+		ARRAY (cache_memory, ca_line_struct);
+		ARRAY (memory_trace, mem_trace_struct);
+	)
+
+	GLOBALS (
+		   	  RINT (Max_Time_Left, 1000);	
+			RINT (nodes_done, 0);
+			RINT (bus_busy, 0);
+		)
+
+	ENTITYLIB (
+
+		ENTITY mips (
+			DESCRIPTION ("Mips Address Generation Box.")
+			STATES (M_STOPPED, M_RUNNING, M_WAITING)
+		        PARAMS (
+			        RINT (TRACES,0);
+			        RARRAY (memory_trace,mem_trace,1000);
+                                  RINT (TC,0);
+                        )
+			PORTS  (
+			       	PORT (to_p_cache, p1_link, SOURCE);
+				PORT (from_p_cache, p1_link, DESTINATION);
+			)
+		);
+
+		ENTITY p_cache (
+			DESCRIPTION ("Primary Cache")
+			STATES (P_HIT, P_MISS, P_IDLE)
+			PARAMS (
+				RCHAR (status0,'_');
+				RCHAR (status1,'_');
+				RARRAY (cache_memory,cache, 256);
+				static RRANGE (P_size, 1, 8, 3)
+			)
+			PORTS  (
+				PORT (from_mips, p1_link, DESTINATION);
+				PORT (to_mips, p1_link, SOURCE);
+				PORT (to_s_cache, p1_link, SOURCE);
+				PORT (from_s_cache, p1_link, DESTINATION);
+			)
+		);
+
+		ENTITY s_cache (
+			DESCRIPTION ("Secondary Cache")
+			STATES (S_HIT, S_MISS, S_IDLE)
+			PARAMS (
+				RCHAR (status0,'_');
+				RCHAR (status1,'_');
+				RARRAY (cache_memory,cache, 1024);
+				static RRANGE (S_size, 1, 10, 4)
+			)
+			PORTS  (
+				PORT (from_p_cache, p1_link, DESTINATION);
+				PORT (to_p_cache, p1_link, SOURCE);
+				PORT (to_mp_bus, p1_link, SOURCE);
+				PORT (from_mp_bus, p1_link, DESTINATION);
+				PORT (from_mp_bus1, p1_link, DESTINATION);
+			)
+		);
+
+		ENTITY Memory (
+			DESCRIPTION ("Cluster Memory Unit")
+			STATES (M_IDLE, M_READ, M_WRITE, M_WRITEB)
+			PARAMS (
+				RINT (cluster_id, 0 );
+				RCHAR (status, '_' );
+				static RRANGE (M_size, 1, 16, 10)
+			)
+			PORTS  (
+				PORT (from_mp_bus, p2_link, DESTINATION);
+				PORT (to_mp_bus, p2_link, SOURCE);
+			)
+		);
+
+		ENTITY bus_arb ( 
+		       DESCRIPTION("MP Bus [arbitor].")
+		       STATES (IDLE, NODE1, NODE2, NODE3, NODE4, STOPPED)
+		       PARAMS (
+				RCHAR (input1, '-' );
+				RCHAR (input2, '-' );
+				RCHAR (input3, '-' );
+				RCHAR (input4, '-' );
+				RSTRING (n1_snoop, "---------" );
+				RSTRING (n2_snoop, "---------" );
+				RSTRING (n3_snoop, "---------" );
+				RSTRING (n4_snoop, "---------" );
+				RSTRING (action, "------" );
+				RSTRING (data_source, "------" );
+ 				RSTRING (Ccount, "Bus Cycles:");
+ 			 	RINT (Cycles, 0);
+		       )
+		       PORTS (
+				PORT (from_mips1, p1_link, DESTINATION);
+				PORT (from_mips2, p1_link, DESTINATION);
+				PORT (from_mips3, p1_link, DESTINATION);
+				PORT (from_mips4, p1_link, DESTINATION);
+				PORT (to_mips1a, p1_link, SOURCE);
+				PORT (to_mips2a, p1_link, SOURCE);
+				PORT (to_mips3a, p1_link, SOURCE);
+				PORT (to_mips4a, p1_link, SOURCE);
+				PORT (to_add_unit, p2_link, SOURCE);
+
+		       )
+		);
+
+		ENTITY bus_add (
+		       DESCRIPTION("MP Bus [address].")
+		       PARAMS ( )
+		       PORTS (
+				PORT (from_arb_unit, p2_link, DESTINATION);
+				PORT (to_memory, p2_link, SOURCE);
+				PORT (to_data_unit, p2_link, SOURCE);
+		       )
+		);
+
+		ENTITY bus_data (
+		       DESCRIPTION("MP Bus [data].")
+		       PARAMS (	)
+		       PORTS (
+				PORT (to_mips1, p1_link, SOURCE);
+				PORT (to_mips2, p1_link, SOURCE);
+				PORT (to_mips3, p1_link, SOURCE);
+				PORT (to_mips4, p1_link, SOURCE);
+				PORT (from_memory, p2_link, DESTINATION);
+				PORT (from_add_unit, p2_link, DESTINATION);
+		       )
+		);
+		
+		COMPENTITY mp_bus (
+ 		DESCENDANTS (
+			CHILD (bus_arb, BUS_ARB, ATTRIB () );
+			CHILD (bus_add, BUS_ADD, ATTRIB () );
+			CHILD (bus_data, BUS_DATA, ATTRIB () );
+			CLINK (bus_arb.BUS_ARB[to_add_unit]->bus_add.BUS_ADD[from_arb_unit],1);
+			CLINK (bus_add.BUS_ADD[to_data_unit]->bus_data.BUS_DATA[from_add_unit],1);
+       			)
+       			DESCRIPTION ("MP Bus")
+       			PARAMS ()
+       			PORTS ()
+    		);
+        )
+
+	STRUCTURE (
+
+		AENTITY mips MIPS0 (
+			DESCRIPTION ("Node 0 Processsor")
+		);
+		AENTITY p_cache P_CACHE0  (
+			DESCRIPTION ("Node 0 Primary Cache")
+		);
+		AENTITY s_cache S_CACHE0  (
+			DESCRIPTION ("Node 0 Secondary Cache")
+		);
+		AENTITY mips MIPS1 (
+			DESCRIPTION ("Node 1 Processor")
+		);
+		AENTITY p_cache P_CACHE1  (
+			DESCRIPTION ("Node 1 Primary Cache")
+		);
+		AENTITY s_cache S_CACHE1  (
+			DESCRIPTION ("Node 1 Secondary Cache")
+		);
+		AENTITY mips MIPS2 (
+			DESCRIPTION ("Node 2 Processsor")
+		);
+		AENTITY p_cache P_CACHE2  (
+			DESCRIPTION ("Node 2 Primary Cache")
+		);
+		AENTITY s_cache S_CACHE2  (
+			DESCRIPTION ("Node 2 Secondary Cache")
+		);
+		AENTITY mips MIPS3 (
+			DESCRIPTION ("Node 3 Processsor")
+		);
+		AENTITY p_cache P_CACHE3  (
+			DESCRIPTION ("Node 3 Primary Cache")
+		);
+		AENTITY s_cache S_CACHE3  (
+			DESCRIPTION ("Node 3 Secondary Cache")
+		);
+		AENTITY Memory MEMORY (
+			DESCRIPTION ("Cluster Memory")
+		);
+		AENTITY mp_bus MP_BUS (
+			DESCRIPTION ("MP-Bus")
+		);
+
+	CLINK (mips.MIPS0[to_p_cache]->p_cache.P_CACHE0[from_mips],1);
+	CLINK (p_cache.P_CACHE0[to_mips]->mips.MIPS0[from_p_cache],1);
+	CLINK (p_cache.P_CACHE0[to_s_cache]->s_cache.S_CACHE0[from_p_cache],1);
+	CLINK (s_cache.S_CACHE0[to_p_cache]->p_cache.P_CACHE0[from_s_cache],1);
+
+	CLINK (mips.MIPS1[to_p_cache]->p_cache.P_CACHE1[from_mips],1);
+	CLINK (p_cache.P_CACHE1[to_mips]->mips.MIPS1[from_p_cache],1);
+	CLINK (p_cache.P_CACHE1[to_s_cache]->s_cache.S_CACHE1[from_p_cache],1);
+	CLINK (s_cache.S_CACHE1[to_p_cache]->p_cache.P_CACHE1[from_s_cache],1);
+
+	CLINK (mips.MIPS2[to_p_cache]->p_cache.P_CACHE2[from_mips],1);
+	CLINK (p_cache.P_CACHE2[to_mips]->mips.MIPS2[from_p_cache],1);
+	CLINK (p_cache.P_CACHE2[to_s_cache]->s_cache.S_CACHE2[from_p_cache],1);
+	CLINK (s_cache.S_CACHE2[to_p_cache]->p_cache.P_CACHE2[from_s_cache],1);
+
+	CLINK (mips.MIPS3[to_p_cache]->p_cache.P_CACHE3[from_mips],1);
+	CLINK (p_cache.P_CACHE3[to_mips]->mips.MIPS3[from_p_cache],1);
+	CLINK (p_cache.P_CACHE3[to_s_cache]->s_cache.S_CACHE3[from_p_cache],1);
+	CLINK (s_cache.S_CACHE3[to_p_cache]->p_cache.P_CACHE3[from_s_cache],1);
+
+	CLINK (mp_bus.MP_BUS[to_mips1a]->s_cache.S_CACHE0[from_mp_bus1],1);
+	CLINK (mp_bus.MP_BUS[to_mips2a]->s_cache.S_CACHE1[from_mp_bus1],1);
+	CLINK (mp_bus.MP_BUS[to_mips3a]->s_cache.S_CACHE2[from_mp_bus1],1);
+	CLINK (mp_bus.MP_BUS[to_mips4a]->s_cache.S_CACHE3[from_mp_bus1],1);
+	CLINK (s_cache.S_CACHE0[to_mp_bus]->mp_bus.MP_BUS[from_mips1],1);
+	CLINK (mp_bus.MP_BUS[to_mips1]->s_cache.S_CACHE0[from_mp_bus],1);
+	CLINK (s_cache.S_CACHE1[to_mp_bus]->mp_bus.MP_BUS[from_mips2],1);
+	CLINK (mp_bus.MP_BUS[to_mips2]->s_cache.S_CACHE1[from_mp_bus],1);
+	CLINK (s_cache.S_CACHE2[to_mp_bus]->mp_bus.MP_BUS[from_mips3],1);
+	CLINK (mp_bus.MP_BUS[to_mips3]->s_cache.S_CACHE2[from_mp_bus],1);
+	CLINK (s_cache.S_CACHE3[to_mp_bus]->mp_bus.MP_BUS[from_mips4],1);
+	CLINK (mp_bus.MP_BUS[to_mips4]->s_cache.S_CACHE3[from_mp_bus],1);
+	CLINK (mp_bus.MP_BUS[to_memory]->Memory.MEMORY[from_mp_bus],1);
+	CLINK (Memory.MEMORY[to_mp_bus]->mp_bus.MP_BUS[from_memory],1);
+	)
+)

@@ -1,0 +1,96 @@
+//
+// Project:	DASH Cluster
+// Entity:	Processor
+// File:	bus_add.hase
+// Date:	2 Nov 2001
+
+// lmw@dcs     8/95 - Plain turnaround box
+//          18/8/95 - account for cache-cache transfers (MESI protocol)
+//
+// Variable Declarations
+
+$class_decls
+
+char access_type;   // memory-cache or cache-cache
+char temp_mode;     // hold original r/w feild whilst wb update is set up
+
+typedef enum{FALSE,TRUE} Bool;
+
+p2_struct pkt_from_bus_arb;   // Packet inbound from mp_bus.      
+p2_struct pkt_bus_ack;        // Used for bus protocol.
+p2_struct pkt_probe;          // Used to probe next pipeline stage (data tfer)
+
+int Bus_add_delay;
+
+void permission_arbitor();
+
+$class_defs
+
+//#include <iostream.h>
+
+void bus_add::permission_arbitor(){
+
+    pkt_bus_ack.p2_address = -1;
+    pkt_bus_ack.p2_rw[0]   = 'P';
+    pkt_bus_ack.p2_id[0]   = ' ';
+    pkt_bus_ack.p2_dev_id  = -1;
+
+    sim_schedule(from_arb_unit,0,BUSPKT,SIM_PUT(p2_struct,pkt_bus_ack));
+
+}
+
+$body 
+
+Bus_add_delay = 3;
+while ((nodes_done<=3)  && (Max_Time_Left >=0))
+{
+    access_type='m';       // default access type is from memory.
+   
+   if (sim_waiting(ev, SIM_ANY)<=0) {
+	sim_hold(1);
+	continue;
+   }
+
+    permission_arbitor();  // Give 'all clear' signal to arbitor.
+
+    sim_hold(Bus_add_delay); 
+     // Block for simulated processing delay
+
+    sim_get_next(ev);  // This event _will_ be from the bus_arb
+    SIM_CAST(p2_struct,pkt_from_bus_arb,ev);
+
+    /* now act on whether t/fer is cache-cache */
+    /* or memory-cache.                        */
+
+    if (pkt_from_bus_arb.p2_rw[0]=='r'){
+	if ((pkt_from_bus_arb.p2_id[0]=='S') && (pkt_from_bus_arb.p2_id[1]=='U')){
+	    access_type='c';  // cache-to-cache t/fer.
+	}
+    }
+
+
+    if (access_type=='m')
+	{
+	 send_BUSPKT(to_memory,pkt_from_bus_arb);
+	}
+    else
+	{
+
+	/* note we may need to send out two packets if the write-back field */
+	/* on the incoming packet is set, this extra packet will be an      */
+	/* update 'u' write packet to the memory unit                       */
+
+	if (pkt_from_bus_arb.p2_id[2]=='*'){  // WB flag detected	    
+	    temp_mode = (char) pkt_from_bus_arb.p2_rw[0];
+	    pkt_from_bus_arb.p2_rw[0]='u';    // set update mode for next pkt.
+	    send_BUSPKT(to_memory,pkt_from_bus_arb);
+	    pkt_from_bus_arb.p2_rw[0]=temp_mode;
+	}
+	pkt_from_bus_arb.p2_id[2]=' ';
+	send_BUSPKT(to_data_unit,pkt_from_bus_arb);
+    }
+}
+
+
+
+ 

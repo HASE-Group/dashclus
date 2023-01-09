@@ -1,0 +1,101 @@
+//
+// Project:	DASH Cluster
+// Entity:	Processor
+// File:	Memory.hase
+// Date:	Mar 2003
+
+// Originally Written by Lawrence Williams
+// Later modified by Roland Ibbett and Frederic Mallet
+
+// Variable Declarations
+
+
+$class_decls
+
+p2_struct pkt_from_mp_bus;   // Packet inbound from mp_bus.
+    p2_struct pkt_probe;
+    p2_struct pkt_add_ack;
+    
+
+char e_type;                   // Hold event type (r/w)              
+int M_delay;
+int time;
+
+void do_mp_rw(sim_event&);
+
+$class_defs
+
+void Memory::do_mp_rw(sim_event &ev){
+    // Show state info.
+    if (pkt_from_mp_bus.p2_rw[0]!='u' && pkt_from_mp_bus.p2_rw[0]!='w')	// not 'u' and not 'w'
+     {
+ 	status='R';
+	my_state=M_READ;
+ 	dump_state();
+      }
+    else
+     {
+	 if(pkt_from_mp_bus.p2_rw[0]=='w'){
+	     status='W';
+	     my_state=M_WRITE;
+	     dump_state();
+     }
+   else
+    {
+	     status='W';
+	     my_state=M_WRITEB;
+	     dump_state();
+	 }
+     }
+}
+
+$body 
+
+// initialise status.
+
+M_delay = 4;
+status='_';
+my_state=M_IDLE;
+dump_state();
+
+while ((nodes_done<4)  && (Max_Time_Left >=0))
+{
+   if (sim_waiting(ev, SIM_ANY)<=0) {
+	sim_hold(1);
+	continue;
+   }
+    
+    /* check now for special WB - case b read */
+    
+    SIM_CAST(p2_struct,pkt_from_mp_bus,ev);
+
+    if (pkt_from_mp_bus.p2_id[2]=='*'){        // we have case b WB
+
+	status='W';
+	my_state=M_WRITE;
+	dump_state();
+	sim_hold(M_delay);
+
+ send_BUSPKT (to_mp_bus,pkt_from_mp_bus);
+
+    }else{
+
+time = sim_clock();
+
+	e_type = (char) pkt_from_mp_bus.p2_rw[0];
+	
+	do_mp_rw(ev);
+	sim_hold(M_delay);  // Simulate memory unit delay
+	
+	/* Classify bus action (r/w/u) */
+	// now probe data transfer stage to see if ready for next data pkt
+	
+	if (e_type!='u'){
+	   send_BUSPKT (to_mp_bus,pkt_from_mp_bus);
+	}
+    }
+status='_';
+my_state=M_IDLE;
+dump_state();
+}
+

@@ -1,0 +1,161 @@
+crest : position (550,60)
+title : position (30,430)
+--parameters : position (500,40)
+
+--TIME_LIMITER : position (30,400)
+--TIME_LIMITER : STATES TIME:title
+
+mips : param TC mode VALUE POSITION (24,33)
+--mips : param MIPS_delay mode NAME_VALUE position (515,60)
+
+p_cache : param status0 mode VALUE position (14,12)
+p_cache : param status1 mode VALUE position (24,12)
+
+s_cache : param status0 mode VALUE POSITION (14,12)
+s_cache : param status1 mode VALUE POSITION (24,12)
+
+Memory : param status mode VALUE position (22,36)
+
+bus_arb : param input1 mode VALUE position (28,40)
+bus_arb : param input2 mode VALUE position (28,66)
+bus_arb : param input3 mode VALUE position (28,96)
+bus_arb : param input4 mode VALUE position (28,124)
+bus_arb : param n1_snoop mode VALUE position (66,72)
+bus_arb : param n2_snoop mode VALUE position (66,89)
+bus_arb : param n3_snoop mode VALUE position (66,106)
+bus_arb : param n4_snoop mode VALUE position (66,122)
+bus_arb : param action mode VALUE position (70,50)
+bus_arb : param data_source mode VALUE position (63,151)
+bus_arb : port from_mips1 side LEFT position 48
+bus_arb : port from_mips2 side LEFT position 75
+bus_arb : port from_mips3 side LEFT position 105
+bus_arb : port from_mips4 side LEFT position 133
+bus_arb : port to_mips1a side LEFT position 48
+bus_arb : port to_mips2a side LEFT position 75
+bus_arb : port to_mips3a side LEFT position 105
+bus_arb : port to_mips4a side LEFT position 133
+
+MIPS0 : position (34,64)
+MIPS0 : STATES M_STOPPED:mips_stopped M_RUNNING:mips_running M_WAITING:mips_waiting
+MIPS0 : port to_p_cache side RIGHT position 21
+MIPS0 : port from_p_cache side RIGHT position 39 ICON portl
+
+P_CACHE0 : position (128,70)
+P_CACHE0 : port from_mips side LEFT position 15 ICON portr
+P_CACHE0 : port to_mips side LEFT position 33
+P_CACHE0 : port to_s_cache side RIGHT position 15
+P_CACHE0 : port from_s_cache side RIGHT position 33 ICON portl
+
+S_CACHE0 : position (213,70)
+S_CACHE0 : port from_p_cache side LEFT position 15 ICON portr
+S_CACHE0 : port to_p_cache side LEFT position 33
+S_CACHE0 : port to_mp_bus side RIGHT position 13
+S_CACHE0 : port from_mp_bus side RIGHT position 32 ICON portl
+S_CACHE0 : port from_mp_bus1 side RIGHT position 32 ICON portl
+
+MIPS1 : position (34,134)
+MIPS1 : STATES M_STOPPED:mips_stopped M_RUNNING:mips_running M_WAITING:mips_waiting
+MIPS1 : port to_p_cache side RIGHT position 21
+MIPS1 : port from_p_cache side RIGHT position 39 ICON portl
+
+P_CACHE1 : position (128,140)
+P_CACHE1 : port from_mips side LEFT position 15 ICON portr
+P_CACHE1 : port to_mips side LEFT position 33
+P_CACHE1 : port to_s_cache side RIGHT position 15
+P_CACHE1 : port from_s_cache side RIGHT position 33 ICON portl
+
+S_CACHE1 : position (213,140)
+S_CACHE1 : port from_p_cache side LEFT position 15 ICON portr
+S_CACHE1 : port to_p_cache side LEFT position 33
+S_CACHE1 : port to_mp_bus side RIGHT position 13
+S_CACHE1 : port from_mp_bus side RIGHT position 32 ICON portl
+S_CACHE1 : port from_mp_bus1 side RIGHT position 32 ICON portl
+
+
+MIPS2 : position (34,204)
+MIPS2 : STATES M_STOPPED:mips_stopped M_RUNNING:mips_running M_WAITING:mips_waiting
+MIPS2 : port to_p_cache side RIGHT position 21
+MIPS2 : port from_p_cache side RIGHT position 39 ICON portl
+
+P_CACHE2 : position (128,210)
+P_CACHE2 : port from_mips side LEFT position 15 ICON portr
+P_CACHE2 : port to_mips side LEFT position 33
+P_CACHE2 : port to_s_cache side RIGHT position 15
+P_CACHE2 : port from_s_cache side RIGHT position 33 ICON portl
+
+S_CACHE2 : position (213,210)
+S_CACHE2 : port from_p_cache side LEFT position 15 ICON portr
+S_CACHE2 : port to_p_cache side LEFT position 33
+S_CACHE2 : port to_mp_bus side RIGHT position 13
+S_CACHE2 : port from_mp_bus side RIGHT position 32 ICON portl
+S_CACHE2 : port from_mp_bus1 side RIGHT position 32 ICON portl
+
+MIPS3 : position (34,274)
+MIPS3 : STATES M_STOPPED:mips_stopped M_RUNNING:mips_running M_WAITING:mips_waiting
+MIPS3 : port to_p_cache side RIGHT position 21
+MIPS3 : port from_p_cache side RIGHT position 39 ICON portl
+
+P_CACHE3 : position (128,280)
+P_CACHE3 : port from_mips side LEFT position 15 ICON portr
+P_CACHE3 : port to_mips side LEFT position 33
+P_CACHE3 : port to_s_cache side RIGHT position 15
+P_CACHE3 : port from_s_cache side RIGHT position 33 ICON portl
+
+S_CACHE3 : position (213,280)
+S_CACHE3 : port from_p_cache side LEFT position 15 ICON portr
+S_CACHE3 : port to_p_cache side LEFT position 33
+S_CACHE3 : port to_mp_bus side RIGHT position 13
+S_CACHE3 : port from_mp_bus side RIGHT position 32 ICON portl
+S_CACHE3 : port from_mp_bus1 side RIGHT position 32 ICON portl
+
+MP_BUS : position (350,70)
+MP_BUS : port from_mips1 side LEFT position 13 ICON portr
+MP_BUS : port from_mips2 side LEFT position 83 ICON portr
+MP_BUS : port from_mips3 side LEFT position 153 ICON portr
+MP_BUS : port from_mips4 side LEFT position 223 ICON portr
+
+MP_BUS : port to_mips1 side LEFT position 32
+MP_BUS : port to_mips2 side LEFT position 102
+MP_BUS : port to_mips3 side LEFT position 172
+MP_BUS : port to_mips4 side LEFT position 242
+
+MP_BUS : port to_mips1a side LEFT position 32
+MP_BUS : port to_mips2a side LEFT position 102
+MP_BUS : port to_mips3a side LEFT position 172
+MP_BUS : port to_mips4a side LEFT position 242
+
+MP_BUS : port to_memory side RIGHT position 182
+MP_BUS : port from_memory side RIGHT position 273 ICON portl
+
+MP_BUS.BUS_ARB : position (-30,-35)
+MP_BUS.BUS_ARB : port from_mips1 side LEFT position 48
+MP_BUS.BUS_ARB : port from_mips2 side LEFT position 75
+MP_BUS.BUS_ARB : port from_mips3 side LEFT position 105
+MP_BUS.BUS_ARB : port from_mips4 side LEFT position 133
+MP_BUS.BUS_ARB : port to_mips1a side LEFT position 52
+MP_BUS.BUS_ARB : port to_mips2a side LEFT position 79
+MP_BUS.BUS_ARB : port to_mips3a side LEFT position 109
+MP_BUS.BUS_ARB : port to_mips4a side LEFT position 137
+MP_BUS.BUS_ARB : port to_add_unit side BOTTOM position 69
+
+MP_BUS.BUS_ADD : position (-30,160)
+MP_BUS.BUS_ADD : port from_arb_unit side TOP position 69 ICON portd
+MP_BUS.BUS_ADD : port to_memory side RIGHT position 22
+MP_BUS.BUS_ADD : port to_data_unit side BOTTOM position 69
+
+MP_BUS.BUS_DATA : position (-30,259)
+MP_BUS.BUS_DATA : port to_mips1 side LEFT position 12
+MP_BUS.BUS_DATA : port to_mips2 side LEFT position 21
+MP_BUS.BUS_DATA : port to_mips3 side LEFT position 30
+MP_BUS.BUS_DATA : port to_mips4 side LEFT position 39
+MP_BUS.BUS_DATA : port from_memory side RIGHT position 14 ICON portl
+MP_BUS.BUS_DATA : port from_add_unit side TOP position 69 ICON portd
+
+--MP_BUS.BUS_ARB : param Bus_arb_delay mode NAME_VALUE position (515,180)
+--MP_BUS.BUS_ADD : PARAM Bus_add_delay mode NAME_VALUE position (515,195)
+--MP_BUS.BUS_DATA : PARAM Bus_data_delay mode NAME_VALUE position (515,210)
+
+MEMORY : position (525,247)
+MEMORY : port from_mp_bus side LEFT position 5 ICON portr
+MEMORY : port to_mp_bus side LEFT position 96
+

@@ -1,0 +1,37 @@
+// Project	MU5
+// Entity	timer
+// File		timer.hase
+// Date		April 2013
+
+$class_decls
+
+
+
+// structures and variables
+
+bool time_out;
+// classes
+
+$class_defs
+
+$body
+
+
+time_out = false;
+
+while (nodes_done < 4)
+{
+   sim_hold(10);
+   Max_Time_Left = Max_Time_Left - 10;
+printf("Max_Time_Left  = %d \n", Max_Time_Left);
+   dump_state();
+  if (Max_Time_Left <= 0)
+   {
+    time_out = true;
+   }
+}
+
+$report
+
+if (time_out)
+{printf("Simulation stopped : maximum time limit exceeded \n");}
